@@ -56,6 +56,7 @@ _Pst. hey, you, join our stargazers :)_
 We provide an easy to use API with our hosted version. You can find the playground and documentation [here](https://firecrawl.dev/playground). You can also self host the backend if you'd like.
 
 Check out the following resources to get started:
+
 - [x] **API**: [Documentation](https://docs.firecrawl.dev/api-reference/introduction)
 - [x] **SDKs**: [Python](https://docs.firecrawl.dev/sdks/python), [Node](https://docs.firecrawl.dev/sdks/node)
 - [x] **LLM Frameworks**: [Langchain (python)](https://python.langchain.com/docs/integrations/document_loaders/firecrawl/), [Langchain (js)](https://js.langchain.com/docs/integrations/document_loaders/web_loaders/firecrawl), [Llama Index](https://docs.llamaindex.ai/en/latest/examples/data_connectors/WebPageDemo/#using-firecrawl-reader), [Crew.ai](https://docs.crewai.com/), [Composio](https://composio.dev/tools/firecrawl/all), [PraisonAI](https://docs.praison.ai/firecrawl/), [Superinterface](https://superinterface.ai/docs/assistants/functions/firecrawl), [Vectorize](https://docs.vectorize.io/integrations/source-connectors/firecrawl)
@@ -64,7 +65,129 @@ Check out the following resources to get started:
 - [x] **Others**: [Zapier](https://zapier.com/apps/firecrawl/integrations), [Pabbly Connect](https://www.pabbly.com/connect/integrations/firecrawl/)
 - [ ] Want an SDK or Integration? Let us know by opening an issue.
 
-To run locally, refer to guide [here](https://github.com/firecrawl/firecrawl/blob/main/CONTRIBUTING.md).
+## 🚀 Running Locally on macOS
+
+You can run Firecrawl locally on your macOS machine using Docker. This guide will help you get started quickly.
+
+### Prerequisites
+
+Make sure you have the following installed on your macOS:
+
+- [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop) (includes Docker Compose)
+- Git (comes pre-installed on macOS)
+
+### Quick Start Guide
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/firecrawl/firecrawl.git
+   cd firecrawl
+   ```
+
+2. **Configure environment variables**
+
+   Copy the example environment file and configure it for Docker:
+
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+
+   The default configuration in `.env.example` is already set up for Docker. For basic usage, you can use it as-is. The key settings are:
+   - `REDIS_URL=redis://redis:6379` - Connects to Redis container
+   - `POSTGRES_HOST=nuq-postgres` - Connects to PostgreSQL container
+   - `PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape` - Connects to Playwright service
+   - `USE_DB_AUTHENTICATION=false` - Runs without authentication (for local development)
+
+   **Optional**: If you want to use LLM features (like AI extraction), add your OpenAI API key:
+
+   ```bash
+   echo "OPENAI_API_KEY=sk-your-key-here" >> apps/api/.env
+   ```
+
+3. **Start all services with Docker Compose**
+
+   This single command will build and start all required services (PostgreSQL, Redis, RabbitMQ, Playwright, and the API):
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+   The first build may take 5-10 minutes as it downloads and builds all dependencies.
+
+4. **Verify services are running**
+
+   ```bash
+   docker compose ps
+   ```
+
+   You should see the following services running:
+   - `firecrawl-api-1` - The main API service
+   - `firecrawl-redis-1` - Redis for caching and queuing
+   - `firecrawl-nuq-postgres-1` - PostgreSQL database
+   - `firecrawl-rabbitmq-1` - RabbitMQ for message queuing
+   - `firecrawl-playwright-service-1` - Playwright for browser automation
+
+5. **Test the API**
+
+   Once all services are running, test the API with a simple request:
+
+   ```bash
+   curl http://localhost:3002/test
+   ```
+
+   You should receive: `Hello, world!`
+
+   Try a scrape request:
+
+   ```bash
+   curl -X POST http://localhost:3002/v1/scrape \
+       -H 'Content-Type: application/json' \
+       -d '{
+         "url": "https://example.com"
+       }'
+   ```
+
+6. **View logs** (optional)
+
+   ```bash
+   # View all logs
+   docker compose logs -f
+
+   # View specific service logs
+   docker compose logs -f api
+   ```
+
+7. **Stop the services**
+
+   ```bash
+   docker compose down
+   ```
+
+   To stop and remove all data (including database):
+
+   ```bash
+   docker compose down -v
+   ```
+
+### Troubleshooting
+
+**Port already in use**: If port 3002 is already in use, you can change it by setting `PORT=3003` in your `.env` file or by running:
+
+```bash
+PORT=3003 docker compose up -d
+```
+
+**Services not starting**: Check the logs for specific errors:
+
+```bash
+docker compose logs api
+docker compose logs postgres
+```
+
+**Out of memory**: Increase Docker Desktop's memory allocation in Settings → Resources → Memory (recommended: 8GB+)
+
+For more detailed local development setup (without Docker), refer to the [CONTRIBUTING.md](https://github.com/firecrawl/firecrawl/blob/main/CONTRIBUTING.md) guide.
 
 ### API Key
 
@@ -79,6 +202,7 @@ To use the API, you need to sign up on [Firecrawl](https://firecrawl.dev) and ge
 - [**Extract**](#extract): get structured data from single page, multiple pages or entire websites with AI.
 
 ### Powerful Capabilities
+
 - **LLM-ready formats**: markdown, structured data, screenshot, HTML, links, metadata
 - **The hard stuff**: proxies, anti-bot mechanisms, dynamic content (js-rendered), output parsing, orchestration
 - **Customizability**: exclude tags, crawl behind auth walls with custom headers, max crawl depth, etc...
@@ -210,11 +334,31 @@ Response:
 {
   "success": true,
   "links": [
-    { "url": "https://firecrawl.dev", "title": "Firecrawl", "description": "Firecrawl is a tool that allows you to crawl a website and get the data you need." },
-    { "url": "https://www.firecrawl.dev/pricing", "title": "Firecrawl Pricing", "description": "Firecrawl Pricing" },
-    { "url": "https://www.firecrawl.dev/blog", "title": "Firecrawl Blog", "description": "Firecrawl Blog" },
-    { "url": "https://www.firecrawl.dev/playground", "title": "Firecrawl Playground", "description": "Firecrawl Playground" },
-    { "url": "https://www.firecrawl.dev/smart-crawl", "title": "Firecrawl Smart Crawl", "description": "Firecrawl Smart Crawl" }
+    {
+      "url": "https://firecrawl.dev",
+      "title": "Firecrawl",
+      "description": "Firecrawl is a tool that allows you to crawl a website and get the data you need."
+    },
+    {
+      "url": "https://www.firecrawl.dev/pricing",
+      "title": "Firecrawl Pricing",
+      "description": "Firecrawl Pricing"
+    },
+    {
+      "url": "https://www.firecrawl.dev/blog",
+      "title": "Firecrawl Blog",
+      "description": "Firecrawl Blog"
+    },
+    {
+      "url": "https://www.firecrawl.dev/playground",
+      "title": "Firecrawl Playground",
+      "description": "Firecrawl Playground"
+    },
+    {
+      "url": "https://www.firecrawl.dev/smart-crawl",
+      "title": "Firecrawl Smart Crawl",
+      "description": "Firecrawl Smart Crawl"
+    }
   ]
 }
 ```
@@ -239,9 +383,21 @@ Response will be an ordered list from the most relevant to the least relevant.
 {
   "success": true,
   "links": [
-    { "url": "https://docs.firecrawl.dev", "title": "Firecrawl Docs", "description": "Firecrawl Docs" },
-    { "url": "https://docs.firecrawl.dev/sdks/python", "title": "Firecrawl Python SDK", "description": "Firecrawl Python SDK" },
-    { "url": "https://docs.firecrawl.dev/learn/rag-llama3", "title": "Firecrawl RAG Llama 3", "description": "Firecrawl RAG Llama 3" }
+    {
+      "url": "https://docs.firecrawl.dev",
+      "title": "Firecrawl Docs",
+      "description": "Firecrawl Docs"
+    },
+    {
+      "url": "https://docs.firecrawl.dev/sdks/python",
+      "title": "Firecrawl Python SDK",
+      "description": "Firecrawl Python SDK"
+    },
+    {
+      "url": "https://docs.firecrawl.dev/learn/rag-llama3",
+      "title": "Firecrawl RAG Llama 3",
+      "description": "Firecrawl RAG Llama 3"
+    }
   ]
 }
 ```
@@ -314,7 +470,7 @@ Example: https://firecrawl.dev/some-page
 Multiple Pages / Full Domain
 Example: https://firecrawl.dev/*
 
-When you use /*, Firecrawl will automatically crawl and parse all URLs it can discover in that domain, then extract the requested data.
+When you use /\*, Firecrawl will automatically crawl and parse all URLs it can discover in that domain, then extract the requested data.
 
 ```bash
 curl -X POST https://api.firecrawl.dev/v2/extract \
@@ -322,8 +478,8 @@ curl -X POST https://api.firecrawl.dev/v2/extract \
     -H 'Authorization: Bearer YOUR_API_KEY' \
     -d '{
       "urls": [
-        "https://firecrawl.dev/*", 
-        "https://docs.firecrawl.dev/", 
+        "https://firecrawl.dev/*",
+        "https://docs.firecrawl.dev/",
         "https://www.ycombinator.com/companies"
       ],
       "prompt": "Extract the company mission, whether it is open source, and whether it is in Y Combinator from the page.",
@@ -486,8 +642,6 @@ curl -X POST https://api.firecrawl.dev/v2/batch/scrape \
     }'
 ```
 
-
-
 ## Using Python SDK
 
 ### Installing Python SDK
@@ -579,7 +733,6 @@ const response = await firecrawl.crawl('https://firecrawl.dev', {
 console.log(response);
 ```
 
-
 ### Extracting structured data from a URL
 
 With LLM extraction, you can easily extract structured data from any URL. We support zod schema to make it easier for you too. Here is how to use it:
@@ -599,7 +752,7 @@ const schema = z.object({
         points: z.number(),
         by: z.string(),
         commentsURL: z.string(),
-      })
+      }),
     )
     .length(5)
     .describe('Top 5 stories on Hacker News'),
@@ -617,14 +770,13 @@ console.log(extractRes);
 
 ## Open Source vs Cloud Offering
 
-Firecrawl is open source available under the AGPL-3.0 license. 
+Firecrawl is open source available under the AGPL-3.0 license.
 
 To deliver the best possible product, we offer a hosted version of Firecrawl alongside our open-source offering. The cloud solution allows us to continuously innovate and maintain a high-quality, sustainable service for all users.
 
 Firecrawl Cloud is available at [firecrawl.dev](https://firecrawl.dev) and offers a range of features that are not available in the open source version:
 
 ![Open Source vs Cloud Offering](https://raw.githubusercontent.com/firecrawl/firecrawl/main/img/open-source-cloud.png)
-
 
 ## Contributing
 
@@ -649,7 +801,6 @@ Please note:
 - When using or contributing to this project, ensure you comply with the appropriate license terms for the specific component you are working with.
 
 For more details on the licensing of specific components, please refer to the LICENSE files in the respective directories or contact the project maintainers.
-
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">

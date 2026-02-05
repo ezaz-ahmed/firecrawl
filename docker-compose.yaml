@@ -13,20 +13,20 @@ x-common-service: &common-service
   networks:
     - backend
   extra_hosts:
-    - "host.docker.internal:host-gateway"
+    - 'host.docker.internal:host-gateway'
   logging:
-    driver: "json-file"
+    driver: 'json-file'
     options:
-      max-size: "10m"
-      max-file: "3"
-      compress: "true"
+      max-size: '10m'
+      max-file: '3'
+      compress: 'true'
 
 x-common-env: &common-env
   REDIS_URL: ${REDIS_URL:-redis://redis:6379}
   REDIS_RATE_LIMIT_URL: ${REDIS_URL:-redis://redis:6379}
   PLAYWRIGHT_MICROSERVICE_URL: ${PLAYWRIGHT_MICROSERVICE_URL:-http://playwright-service:3000/scrape}
   POSTGRES_USER: ${POSTGRES_USER:-postgres}
-  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+  POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
   POSTGRES_DB: ${POSTGRES_DB:-postgres}
   POSTGRES_HOST: ${POSTGRES_HOST:-nuq-postgres}
   POSTGRES_PORT: ${POSTGRES_PORT:-5432}
@@ -38,8 +38,8 @@ x-common-env: &common-env
   OPENAI_API_KEY: ${OPENAI_API_KEY}
   OPENAI_BASE_URL: ${OPENAI_BASE_URL}
   MODEL_NAME: ${MODEL_NAME}
-  MODEL_EMBEDDING_NAME: ${MODEL_EMBEDDING_NAME} 
-  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL} 
+  MODEL_EMBEDDING_NAME: ${MODEL_EMBEDDING_NAME}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
   SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
   BULL_AUTH_KEY: ${BULL_AUTH_KEY}
   TEST_API_KEY: ${TEST_API_KEY}
@@ -76,11 +76,11 @@ services:
     mem_limit: 4G
     memswap_limit: 4G
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
-        compress: "true"
+        max-size: '10m'
+        max-file: '3'
+        compress: 'true'
     tmpfs:
       - /tmp/.cache:noexec,nosuid,size=1g
 
@@ -88,7 +88,7 @@ services:
     <<: *common-service
     environment:
       <<: *common-env
-      HOST: "0.0.0.0"
+      HOST: '0.0.0.0'
       PORT: ${INTERNAL_PORT:-3002}
       EXTRACT_WORKER_PORT: ${EXTRACT_WORKER_PORT:-3004}
       WORKER_PORT: ${WORKER_PORT:-3005}
@@ -102,7 +102,7 @@ services:
       rabbitmq:
         condition: service_healthy
     ports:
-      - "${PORT:-3002}:${INTERNAL_PORT:-3002}"
+      - '${PORT:-3002}:${INTERNAL_PORT:-3002}'
     command: node dist/src/harness.js --start-docker
     # Resource limits for Docker Compose (not Swarm)
     # Increase if you have more CPU cores/RAM available
@@ -121,30 +121,35 @@ services:
       - backend
     command: redis-server --bind 0.0.0.0
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "5m"
-        max-file: "2"
-        compress: "true"
-    
+        max-size: '5m'
+        max-file: '2'
+        compress: 'true'
+
   rabbitmq:
     image: rabbitmq:3-management
     networks:
       - backend
     command: rabbitmq-server
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'check_running']
       interval: 5s
       timeout: 5s
       retries: 3
       start_period: 5s
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "5m"
-        max-file: "2"
-        compress: "true"
-  
+        max-size: '5m'
+        max-file: '2'
+        compress: 'true'
+
   nuq-postgres:
     build: apps/nuq-postgres
     environment:
@@ -154,12 +159,15 @@ services:
     networks:
       - backend
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
-        compress: "true"
+        max-size: '10m'
+        max-file: '3'
+        compress: 'true'
 
 networks:
   backend:
     driver: bridge
+
+volumes:
+  rabbitmq_data:
